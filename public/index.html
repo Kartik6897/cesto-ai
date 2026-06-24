@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CESTO AI - Cost Controller & Estimator</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo-icon">
+          <i class="fa-solid fa-calculator-combined"></i>
+        </div>
+        <div class="logo-text">
+          <h2>CESTO <span>AI</span></h2>
+          <p>Cost Control Engine</p>
+        </div>
+      </div>
+      
+      <nav class="nav-menu">
+        <a href="#" class="nav-item active" data-tab="dashboard">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item" data-tab="departments">
+          <i class="fa-solid fa-building-user"></i>
+          <span>Departments</span>
+        </a>
+        <a href="#" class="nav-item" data-tab="ingest">
+          <i class="fa-solid fa-cloud-arrow-down"></i>
+          <span>Ingest Center</span>
+        </a>
+        <a href="#" class="nav-item" data-tab="agent">
+          <i class="fa-solid fa-robot"></i>
+          <span>CESTO Agent</span>
+          <span class="badge" id="rec-badge-count">3</span>
+        </a>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <div class="status-indicator online">
+          <span class="dot"></span>
+          <span>Agent Proxy: Active</span>
+        </div>
+        <p class="version">v1.2.0-beta</p>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="main-content">
+      
+      <!-- TOP HEADER -->
+      <header class="top-header">
+        <div class="header-title">
+          <h1 id="page-title">Dashboard & Analytics</h1>
+          <p class="subtitle" id="page-subtitle">Real-time LLM cost tracking and optimization</p>
+        </div>
+        
+        <div class="header-actions">
+          <div class="simulator-status-card">
+            <span>Traffic Simulator</span>
+            <label class="switch">
+              <input type="checkbox" id="simulator-toggle">
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <button id="reset-db-btn" class="btn btn-outline" title="Reset Data to default">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </button>
+        </div>
+      </header>
+
+      <!-- ALERT BANNER (Dynamically shown if budget breach) -->
+      <div class="alert-banner hidden" id="global-alert-banner">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span id="global-alert-text">Warning: Engineering department is approaching its monthly AI usage limit.</span>
+      </div>
+
+      <!-- MAIN CONTAINER FOR TABS -->
+      <div class="content-body">
+        
+        <!-- ============================================== -->
+        <!-- TAB: DASHBOARD -->
+        <!-- ============================================== -->
+        <section id="tab-dashboard" class="tab-content active">
+          <!-- Quick Stats Grid -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon emerald">
+                <i class="fa-solid fa-wallet"></i>
+              </div>
+              <div class="stat-details">
+                <h3>Total Tracked Spend</h3>
+                <h2 id="stat-total-spend">$0.00</h2>
+                <span class="trend neutral">Active month</span>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon purple">
+                <i class="fa-solid fa-piggy-bank"></i>
+              </div>
+              <div class="stat-details">
+                <h3>Total Savings Shaved</h3>
+                <h2 id="stat-total-savings">$0.00</h2>
+                <span class="trend positive"><i class="fa-solid fa-arrow-trend-up"></i> Optimized routing</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon blue">
+                <i class="fa-solid fa-microchip"></i>
+              </div>
+              <div class="stat-details">
+                <h3>Total Ingested Tokens</h3>
+                <h2 id="stat-total-tokens">0</h2>
+                <span class="trend neutral">Input/Output logs</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon orange">
+                <i class="fa-solid fa-network-wired"></i>
+              </div>
+              <div class="stat-details">
+                <h3>Proxy Optimizations</h3>
+                <h2 id="stat-active-policies">Prompt Caching</h2>
+                <span class="trend positive" id="stat-caching-status">Active</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="charts-row">
+            <div class="chart-container large">
+              <div class="chart-header">
+                <h3>Cost Trend (Last 7 Days)</h3>
+                <div class="chart-legend">
+                  <span class="legend-dot obsidian"></span> Daily Cost ($)
+                </div>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="costTrendChart"></canvas>
+              </div>
+            </div>
+            
+            <div class="chart-container small">
+              <div class="chart-header">
+                <h3>Usage by Service</h3>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="serviceShareChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="charts-row">
+            <div class="chart-container half">
+              <div class="chart-header">
+                <h3>Spent vs Budget by Department</h3>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="departmentBudgetChart"></canvas>
+              </div>
+            </div>
+            
+            <div class="chart-container half">
+              <div class="chart-header">
+                <h3>Top Model Distribution</h3>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="modelDistChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cost Anomalies / High-Cost Requests -->
+          <div class="table-container card">
+            <div class="table-header">
+              <h3>High Cost Log Anomalies (> $0.10)</h3>
+              <p class="muted">List of heavy token exchanges that exceed normal query sizes</p>
+            </div>
+            <div class="table-wrapper">
+              <table id="anomaly-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Department</th>
+                    <th>Model</th>
+                    <th>Task Type</th>
+                    <th>Tokens (In/Out)</th>
+                    <th>Cost</th>
+                    <th>Routing Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Filled dynamically -->
+                  <tr>
+                    <td colspan="7" class="text-center">Loading anomalies...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- TAB: DEPARTMENTS -->
+        <!-- ============================================== -->
+        <section id="tab-departments" class="tab-content">
+          <div class="tab-intro">
+            <h2>Department Control Settings</h2>
+            <p>Set custom monthly budgets, define alert thresholds, and activate fallback routing or proxy rate limits.</p>
+          </div>
+          
+          <form id="departments-form" class="departments-grid">
+            <!-- Cards rendered dynamically via JS -->
+            <div class="text-center" style="grid-column: 1/-1;">Loading department settings...</div>
+          </form>
+          
+          <div class="form-actions card">
+            <div class="form-actions-content">
+              <h4>Apply changes across the proxy controller</h4>
+              <p class="muted">Changes take effect immediately on incoming `/api/ingest` records.</p>
+            </div>
+            <button type="button" id="save-departments-btn" class="btn btn-primary">
+              <i class="fa-solid fa-floppy-disk"></i> Save Configurations
+            </button>
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- TAB: INGEST CENTER -->
+        <!-- ============================================== -->
+        <section id="tab-ingest" class="tab-content">
+          <div class="ingest-grid">
+            <!-- Left Side: Ingest Controls & Testing -->
+            <div class="ingest-controls">
+              <!-- API Docs card -->
+              <div class="card api-docs-card">
+                <h3><i class="fa-solid fa-code"></i> Ingestion API endpoint</h3>
+                <p>Send usage logs from any LLM client (LangChain, LlamaIndex, OpenAI SDK, etc.) through our proxy wrapper.</p>
+                <div class="code-snippet-box">
+                  <span class="method-badge post">POST</span>
+                  <code>http://localhost:3000/api/ingest</code>
+                </div>
+                <div class="code-preview">
+<pre><code>curl -X POST http://localhost:3000/api/ingest \
+  -H "Content-Type: application/json" \
+  -d '{
+    "department": "Engineering",
+    "service": "OpenAI",
+    "model": "gpt-4o",
+    "prompt_tokens": 1500,
+    "completion_tokens": 500,
+    "task_type": "code-generation"
+  }'</code></pre>
+                </div>
+              </div>
+
+              <!-- Manual Ingestion Form -->
+              <div class="card manual-ingest-card">
+                <h3><i class="fa-solid fa-vial"></i> Test Manual Log Ingest</h3>
+                <form id="manual-ingest-form">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="ingest-dept">Department</label>
+                      <select id="ingest-dept" required>
+                        <option value="Engineering">Engineering</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Customer Support">Customer Support</option>
+                        <option value="Product">Product</option>
+                        <option value="HR">HR</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label for="ingest-model">LLM Model</label>
+                      <select id="ingest-model" required>
+                        <option value="gpt-4">gpt-4 (Expensive)</option>
+                        <option value="gpt-4o">gpt-4o (Standard)</option>
+                        <option value="gpt-4o-mini">gpt-4o-mini (Cheap)</option>
+                        <option value="claude-3-5-sonnet">claude-3-5-sonnet</option>
+                        <option value="claude-3-haiku">claude-3-haiku</option>
+                        <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                        <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                        <option value="llama-3-70b">llama-3-70b (Groq)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="ingest-prompt">Prompt Tokens</label>
+                      <input type="number" id="ingest-prompt" value="1200" min="0" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="ingest-completion">Completion Tokens</label>
+                      <input type="number" id="ingest-completion" value="450" min="0" required>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="ingest-task">Task Type</label>
+                    <select id="ingest-task">
+                      <option value="summarization">summarization</option>
+                      <option value="code-generation">code-generation</option>
+                      <option value="translation">translation</option>
+                      <option value="customer-chat">customer-chat</option>
+                      <option value="data-analysis">data-analysis</option>
+                      <option value="content-generation">content-generation</option>
+                    </select>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fa-solid fa-paper-plane"></i> Send Log to Proxy
+                  </button>
+                </form>
+              </div>
+
+              <!-- Upload Logs -->
+              <div class="card file-upload-card">
+                <h3><i class="fa-solid fa-file-csv"></i> Batch Upload Logs</h3>
+                <p class="muted">Upload CSV or JSON files of raw LLM logs to parse and ingest.</p>
+                <div class="drop-zone" id="log-drop-zone">
+                  <i class="fa-solid fa-file-arrow-up drop-icon"></i>
+                  <p>Drag files here or <span>browse</span></p>
+                  <input type="file" id="file-uploader" accept=".json,.csv" hidden>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Side: Live Log Stream -->
+            <div class="ingest-stream">
+              <div class="stream-header card">
+                <div class="stream-title">
+                  <h3>Real-time Log Stream</h3>
+                  <div class="stream-status blink-active" id="stream-pulse">
+                    <span class="pulse-dot"></span>
+                    <span id="pulse-text">Listening...</span>
+                  </div>
+                </div>
+                <button id="clear-logs-btn" class="btn btn-xs btn-outline">Clear logs</button>
+              </div>
+              
+              <div class="logs-console" id="logs-console-stream">
+                <!-- Log entries pop up here -->
+                <div class="console-placeholder">
+                  <i class="fa-solid fa-terminal"></i>
+                  <p>Stream console is listening for requests. Toggle the "Traffic Simulator" above to feed live records.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- TAB: CESTO AGENT -->
+        <!-- ============================================== -->
+        <section id="tab-agent" class="tab-content">
+          <div class="agent-layout">
+            
+            <!-- Left Side: Recommendation Audit Cards -->
+            <div class="agent-audits">
+              <div class="audit-section-header">
+                <h2>Cost Audits & Recommendations</h2>
+                <p class="muted">Automatic scans based on department token patterns.</p>
+              </div>
+              <div class="audit-cards-list" id="recommendations-container">
+                <!-- Loaded dynamically -->
+                <div class="text-center">Scanning database for audits...</div>
+              </div>
+            </div>
+
+            <!-- Right Side: Interactive AI Assistant -->
+            <div class="agent-chat-container card">
+              <div class="chat-header">
+                <div class="agent-avatar">
+                  <i class="fa-solid fa-robot"></i>
+                </div>
+                <div class="agent-info">
+                  <h3>CESTO Cost Agent</h3>
+                  <p class="online-indicator"><span class="small-dot"></span> Conversational Optimizer</p>
+                </div>
+              </div>
+              
+              <div class="chat-messages" id="chat-messages-box">
+                <div class="message agent">
+                  <div class="msg-bubble">
+                    <p>Hello! I am CESTO, your AI Cost Optimization Agent. I monitor proxy logs and flag cost-minimizing opportunities.</p>
+                    <p>I have scanned your token metrics. Here are a few inquiries you can ask me:</p>
+                    <div class="suggested-chips">
+                      <button class="chip-query">How are we doing on costs?</button>
+                      <button class="chip-query">Who is spending the most?</button>
+                      <button class="chip-query">List active optimizations</button>
+                      <button class="chip-query">Explain prompt caching benefits</button>
+                    </div>
+                  </div>
+                  <span class="msg-time">Just now</span>
+                </div>
+              </div>
+              
+              <div class="chat-footer">
+                <form id="chat-form">
+                  <input type="text" id="chat-input" placeholder="Ask CESTO (e.g., 'give me a budget summary' or 'optimize')" autocomplete="off" required>
+                  <button type="submit" class="btn btn-primary btn-round">
+                    <i class="fa-solid fa-paper-plane"></i>
+                  </button>
+                </form>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Custom JS Modules -->
+  <script src="js/api.js"></script>
+  <script src="js/agent.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
